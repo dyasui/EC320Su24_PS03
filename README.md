@@ -35,12 +35,13 @@ write and compile R markdown documents.
 
 ### Data
 
-We will be using the `HealthInsurance` dataset which is composed of 
-cross-sectional survey data from the Medical Expenditure Panel Survey conducted in 1996.
+We will be using the `HousePrices` dataset which is has price and attributes
+of houses sold in Windsor, Canada over the course of July, August, and September
+of 1987.
 
 It can be loaded into memory through installing the `AER` package from CRAN
 (i.e., `install.packages("AER")`).
-Then load the actual dataset with the function: `data("HealthInsurance")`
+Then load the actual dataset with the function: `data("HousePrices")`
 By default, the Rmd will do this for you. 
 After downloading, simply knit the document (cmd/ctrl + shift + k)
 and make sure everything looks okay.
