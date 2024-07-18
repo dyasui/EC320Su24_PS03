@@ -1,0 +1,230 @@
+---
+title: "PS03: Hedonic House Price Regression"
+author: "ANSWER KEY"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## README
+
+Complete the following questions below and show all work.
+You must submit a compiled R report with all code and answers in this document.
+Compile the report to html or PDF and submit on Canvas.
+html is preferred.
+Make sure to write your name above where it says “WRITE YOUR NAME HERE”.
+Include it within the quotation marks.
+
+Before writing answering the following questions,
+make sure to compile the report to make sure that everything is working properly.
+As you answer each question,
+compile after each question to make sure you are not making any errors.
+If you are experiencing an error, read the error carefully.
+One tactic is to selectively delete questions/sections
+until the report compiles.
+This will help you narrow down where the coding error is occurring.
+
+Run the following code chunk to set up your R environment with the 
+necessary packages:
+```{r}
+#| message: false
+# Load tidyverse packages
+library(tidyverse)
+
+# Load broom for tidy() regression outputs
+if (!require("broom")) install.packages("broom") 
+library(broom) 
+
+# Load AER package (install if not available)
+if (!require("AER")) install.packages("AER")
+```
+
+## DATA
+
+Run `data("HousePrices")` to load in the data object `HousePrices` 
+from the `AER` package.
+```{r}
+data("HousePrices")
+```
+
+These data originally come from the paper
+[*Semiparametric Estimation of a Hedonic Price Function*](https://www.jstor.org/stable/2285156) by Paul Anglin and Ramazan Gencay (1996) 
+and were digitized for the econometrics textbook by [Verbeek](https://thenigerianprofessionalaccountant.files.wordpress.com/2013/04/modern-econometrics.pdf) (2004).
+
+Familiarize yourself with the data set by using `?HousePrices` to view the 
+documentation page with variable definitions.
+You should also take a look through the data by using functions like 
+`head()`, `glimpse()`, or `View()`.
+
+## Academic Integrity
+
+You are allowed to consult the lectures, notes, problem sets, quizzes, and the internet on this assignment. 
+However, this is an individual assessment of your own understanding 
+so you are are not permitted to collaborate with anyone else.
+You may consult Stackoverflow, ChatGPT, other LLM models, etc.
+for help with R coding, but you are responsible for understanding any code 
+which you use to answer these questions.
+All written answers must be your in your own words. 
+
+*If you are suspected of plagiarizing, you may recieve a zero for this assignment and possibly for the course.*
+
+## Question 1
+
+Before you run any regressions, I want you to look for any visual patterns in the data.
+We will first start with a scatterplot of the prices observed in this sample to get an idea of the shape of the distribution.
+I have provided the basic code to get a default `ggplot` histogram below,
+but please feel free to add to the code to adjust the labels, aesthetics, 
+binwidth, add a title, etc. to your preferences.
+
+```{r price_histogram}
+HousePrices %>% 
+  ggplot(aes(x=price)) +
+  geom_histogram(
+    fill = "#2D4F67", # Set a custom color by hex code
+    binwidth = 7000   # set a custom width of the bars
+    ) +
+  labs( # set custom labels for title, x axis, and y axis
+    title = "Windsor Canada Housing Price Distribution",
+    subtitle = "Data from Anglin and Gencay (1996)",
+    x = "Sale Price",
+    y = "Number of Houses"
+  ) +
+  theme( plot.title = element_text(hjust = 0.5) ) # center title text
+```
+
+### **1a:** What patterns do you see in the distribution of house prices? *(10 pts)*
+
+**Now take a look through the other variables in the dataset using `?AER::HousePrices`
+or `colnames(HousePrices)`. 
+Choose one variable which you think is (intuitively) an important factor in price.**
+
+### **1b:** Describe the variable you chose. What are the units? Is it continuous or discrete? *(6 pts)*
+
+- **If you chose a *continuous* variable, then fill in the blank in the r chunk labeled `continuous_scatter` below with your variable to see a scatterplot.**
+
+```{r continuous_scatter}
+HousePrices %>%
+  ggplot(aes( x = lotsize, y = price )) +
+  geom_point(color = "#2D4F67") + # set custom dot color
+  labs( # set custom labels for title, x axis, and y axis
+    title = "Houses' Lot Size vs. Sale Price",
+    x = "Lot Size (square feet)",
+    y = "Sale Price"
+  ) +
+  theme( plot.title = element_text(hjust = 0.5) ) # center title text
+```
+
+- **If you chose a *discrete* variable (either an indicator or categorical one),
+then it might be better to use a 'ridgeline' plot where the price density at 
+each level of your explanatory variable is plotted as its own 'ridge'.
+Fill in the blank in the code chunk `discrete_ridgeline` with your variable inside of `as.factor()` so that R knows to interpret it as a factor, not numeric.**
+
+```{r discrete_ridgeline}
+if (!require("ggridges")) install.packages("ggridges")
+HousePrices %>%
+  ggplot(aes( x = price, y = as.factor(bedrooms) )) +
+  ggridges::geom_density_ridges(aes( fill = bedrooms )) +
+  labs( # set custom labels for title, x axis, and y axis
+    title = "Houses' Lot Size vs. Number of Bedrooms",
+    x = "Sale Price",
+    y = "Bedrooms",
+  ) +
+  theme( plot.title = element_text(hjust = 0.5) ) + # center title text
+  guides( fill = "none" )
+```
+
+### **1c:** Describe some patterns you see in the plot above between price and your chosen variable. *(10 pts)*
+
+## Question 2
+
+### **2a:** Write out a regression model mathematically with price as the dependent variable and the same independent variable you used above: *(8 pts)*
+
+$$
+\text{price}_i = \beta_0 + \beta_1 \text{bedrooms}_i + u_i
+$$
+
+### **2b:** Now write out a hypothesis test that the regression above will be used to test *(6 pts)*
+
+$$
+H_0: \beta_1 = 0 \\
+H_1: \beta_1 \neq 0
+$$
+
+### **2c:** Run your hypothesis test at the 95% significance level. Interpret your results *(12 pts)*
+**Include all code you use in its own R chunk**
+```{r simple_regression}
+model1 <- lm(data = HousePrices, price ~ bedrooms) %>% 
+  tidy()
+model1
+```
+
+For every additional bedroom in a house, 
+the sale price is expected to increase by \$`r model1$estimate[2]`.
+The $t$-statistic for the two-tailed hypothesis test in question 2b
+is `r model1$statistic[2]` which is less than the 
+
+## Question 3
+
+You will repeat the steps in Question 2, but this time using a 
+*multiple linear regression model* with *two explanatory variables*.
+Pick another variable other than `price` or the variable you chose in Question 1.
+
+### **3a:** Write out your regression model from 2a but with an additional explanatory variable *(8 pts)*
+$$
+\text{price}_i = \beta_0 + \beta_1\text{variable1}_i + \beta_2\text{variable2}_i + u_i
+$$
+
+### **3b:** Run this regression and report your results *(12 pts)*
+
+```{r multiple_regression}
+# your code goes here
+summary(lm(price ~ bedrooms, data = HousePrices))$r.squared
+summary(lm(price ~ bedrooms, data = HousePrices))$adj.r.squared
+```
+
+**Make sure to address the following prompts:**
+
+- How does your estimate of $\beta_1$ change between `simple_regression` and `multiple_regression`? What about the standard error?
+
+- How does the $R^2$ value change? What about the *adjusted* $R^2$? 
+Is this what you would predict from what you know about those measures?
+
+## Question 4
+
+You will repeat the steps in Question 3, but this time using the
+*multiple linear regression model* with *all* of the variables besides price included. 
+We'll call this the *full model*:
+
+$$
+\begin{align}
+\text{price}_i = & \beta_0 + \beta_1 \text{lotsize}_i + \beta_2 \text{bedrooms}_i + \\
+ & \beta_3 \text{bathrooms}_i + \beta_4 \text{stories}_i + \beta_5 \text{driveway}_i + \\
+ & \beta_6 \text{recreation}_i + \beta_7 \text{fullbase}_i + \beta_8 \text{gasheat}_i + \\
+ & \beta_9 \text{aircon}_i + \beta_{10} \text{garage}_i + \beta_{11} \text{prefer}_i + u_i
+\end{align}
+$$
+
+### **4a:** Run the full model and interpret the $\beta$ on the same variable you chose in 1b *(18 pts)*
+
+```{r full_regression}
+# your code goes here
+```
+
+- How does your estimate of that $\beta$ change between `multiple_regressio` and `full_regression`? What about the standard error?
+
+- How does the $R^2$ value change? What about the *adjusted* $R^2$? 
+
+## Compile and submit your work *(10 pts)*
+
+Make sure that you have written answers to all 7 questions 
+and that all code you used in your answers in contained in code chunks.
+Then compile your Rmd file using the 'Knit' button at the top of the source pane
+or with the hotkey `Shift Cmd/Ctrl K`.
+Open the `PS03.html` file that will appear in the same directory as your 
+`PS03.Rmd` file and check to make sure that the output looks correct.
+
+Once you are sure that your work is correct and formatted correctly,
+upload this file to the assignment named 'ps03' on Canvas.
