@@ -156,7 +156,8 @@ H_0: \text{The number of bedrooms is unrelated to price} \\
 H_1: \text{Number of bedrooms correlates with price}
 $$
 
-  - Should be a two-tailed test if default `lm` output is used later
+  - Should be a two-tailed test if default p-value from `lm` output is used 
+  to test this hypothesis in 2c.
 
 ### **2c:** Run your hypothesis test at the 95% significance level. Interpret your results *(12 pts)*
 
@@ -175,8 +176,8 @@ model1
 #| echo: false # this chunk won't be printed in compiled document
 beta_1 <- model1$estimate[2]  # save the slope estimate
 tstat <- model1$statistic[2] # save the t-stat on beta_1
-# critical value is the 95th percentile of the t dist w/ n-1 degrees of freedom
-tcrit <- qt(p = .95, df = nrow(HousePrices) - 1) 
+# critical value is the 97.5th percentile of the t dist w/ n-1 degrees of freedom
+tcrit <- qt(p = 1 - 0.05/2 , df = nrow(HousePrices) - 1) 
 ```
 
 For every additional bedroom in a house, 
